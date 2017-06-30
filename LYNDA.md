@@ -173,5 +173,108 @@ Another way of using `ng-bind` from `AngularJS` in `Angular2` is by using the `p
 ```
 
 
-## Event Bindings / ng-click, ng-change, ng-blur
+## Input @angular/core {Input} - Similar to the Isolated Scope property Bindings
+
+This is similar to Isolated Scope's property bindings, The `@angular/core Input` decorator, is used to bind the property of the component to it's field properties
+
+```js
+// MediaComponent
+import { Component, Input } from '@angular/core'; //Import the Input from @angular/core
+
+@Component({
+    selector:'mw-media',
+    templateUrl:'./media.component.html',
+    styleUrls:['../app/bootstrap.min.css','./media.component.css']
+})
+export class MediaComponent{
+   
+   @Input() mediaItem; //You can even pass the alias as @Input('mediaItemAs')
+    
+   title:String = `Welcome to the Custom Media Component`;
+
+   onDelete = ():void=>{
+    console.log('The onDelete Button was clicked');
+   }//end:onDelete
+}//end:class-MediaComponent
+```
+
+To Use the above definition, we again use the Property Binding syntax in our App Component:
+
+>app.component.html
+
+```html
+<h1 [textContent]="title"></h1>
+<mw-media [mediaItem]="simpleObject"></mw-media><!--Or it can be the alias property - mediaItemAs-->
+```
+
+---
+
+## Output @angular/core {Output, EventEmitter} - Similar to $scope.$emit
+
+Angular 2 has now an `@Output()` Decorator which when combined with the `new EventEmitter()` instance, gives a way to emit events UP the DOM hierarchy.
+
+This is similar to `$scope.$emit()` in `AngularJS`:
+
+>media-item.component.ts
+
+```js
+// MediaComponent
+import { Component, Input, Output, EventEmitter } from '@angular/core'; //@Output() + EventEmitter() = $scope.$emit
+
+@Component({
+    selector:'mw-media',
+    templateUrl:'./media.component.html',
+    styleUrls:['../app/bootstrap.min.css','./media.component.css']
+})
+export class MediaComponent{
+   
+   @Input() mediaItem;
+   @Output() delete = new EventEmitter(); // Or we can alias the property name by @Output('anotherName')
+
+   title:String = `Welcome to the Custom Media Component`;
+
+   onDelete = ():void=>{
+    this.delete.emit(this.mediaItem); //delete field has .emit due to the EventEmitter instance.
+    console.log('The onDelete Button was clicked');
+   }//end:onDelete
+}//end:class-MediaComponent
+```
+
+>app.component.html
+
+```html
+<h1>
+  {{title}}  
+</h1>
+<mw-media [mediaItem]="simpleObject" 
+(delete)="mediaComponentDeleteHandler($event)"></mw-media>
+```
+
+>app.component.ts
+```js
+import { Component } from '@angular/core';
+// import {platformBrowserDynamic} from @angular/platform-browser-dynamic; //This is deprecated
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./bootstrap.min.css','./app.component.css']
+})
+export class AppComponent {
+  title:String = 'Hello Angular2 - Welcome to Angular 2!';
+
+  simpleObject:any = {
+    name:'Pramod',
+    title:'Developer',
+    expertise:'AngularJS'
+  };//end:simpleObject
+
+  mediaComponentDeleteHandler(mediaItem){ //This is the event handler subscribed to media component's delete event
+    console.log('Media Component Emitted the following: ', mediaItem);
+  }//end:mediaComponentDeleteHandler
+
+}//end:class-AppComponent
+```
+
+---
 
