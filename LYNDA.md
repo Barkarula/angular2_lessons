@@ -13,6 +13,9 @@
 - [Various Platforms in Angular2](#various-platforms-in-angular2)
 - [About Browser Platform](#about-browser-platform)
 - [Angular Template Syntax](#angular-template-syntax)
+- [NgIf directive in Angular2](#ngif-directive-in-angular2)
+- [NgFor is NgRepeat in Angular2](#ngfor-is-ngrepeat-in-angular2)
+- [Custom Attribute Directive](#custom-attribute-directive)
 
 # Introduction
 
@@ -34,6 +37,8 @@ Angular runs on **Components**, The starting point of an Angular app is the **Bo
 > There are 2 types of Directives
 - **Structural**  - Structural Directives modify layouts, by altering elements in the DOM
 - **Attribute** - Attribute Directives change the behaviour/appearance of an existing DOM element
+
+> NOTE: Attribute Directives `cannot change the structure of the DOM, only change its look/behaviour`
 
 > A **Pipe** takes end data, like a string or an array, and runs some logic to transform it to a new output.
 
@@ -278,3 +283,107 @@ export class AppComponent {
 
 ---
 
+# Structural, Attribute Directives in Angular 2
+
+The following are the `built-in` directives in Angular2
+
+- Structural Directives
+  - **ngIf** : *ngIf or [ngIf]
+  - **ngFor**: *ngFor or [ngFor]
+- Attribute Directives
+  - **ngClass** : 
+  ```js
+  [ngClass] = "{'medium-movies': variable===true,'medium-series': variable===false}"
+  ```
+# NgIf directive in Angular2
+
+>NOTE: When using `Angular's Inbuilt Structural directives` we need to prefix them with an asterisk `*ngif`
+
+## What is the Asterisk doing in Angular 2
+The Asterisk is what we call `Synthatic Sugar`. It is the `short hand pattern` for writing that the Platform will convert to the actual pattern.
+
+
+```html
+<div *ngIf="isColored">Pramod</div><!--This is the short hand syntax using the * as syntatic sugar-->
+```
+
+```html
+<template [ngIf]="isColored"><!--Angular2 knows that template tags shouldn't be bound to the actual DOM-->
+  <p>This is the Full version. Template tags are not shown in the actual DOM by Angular2</p>
+</template>
+```
+
+```js
+// MediaComponent
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+
+@Component({
+    selector:'mw-media',
+    templateUrl:'./media.component.html',
+    styleUrls:['../app/bootstrap.min.css','./media.component.css']
+})
+export class MediaComponent{
+   
+   @Input() mediaItem;
+   @Output() delete = new EventEmitter();
+   isWatchedOn:boolean = false; //This is connected to *ngIf
+
+   title:String = `Welcome to the Custom Media Component`;
+
+   onDelete = ():void=>{
+    this.isWatchedOn = true;
+    this.delete.emit(this.mediaItem);
+    console.log('The onDelete Button was clicked');
+   }//end:onDelete
+}//end:class-MediaComponent
+```
+
+
+# NgFor is NgRepeat in Angular2
+
+The Syntatic Sugar syntax for NgFor is as follows
+
+```html
+<div>
+  <ul>
+    <!--Remember that Angular2 is actually replacing the below with a template element-->
+    <li *ngFor="let mediaItem of mediaItemList"></li>
+  </ul>
+</div>
+```
+
+# Custom Attribute Directive
+
+In `AngularJS` we would set a directive as an `attribute` by adding the restrict value as `A`
+```js
+angular.module('myApp').directive('myDirective',function(){
+  return{
+    restrict:'A' //This means the Directive is used as Attribute directive
+  };
+});
+```
+
+In `Angular2` the way to set a directive as an `attribute` is as follows:
+
+>NOTE: You can still add custom properties even to Attribute Directives, by using the `HostBinding` scope from the `@angular/core` scoped library.
+
+```js
+import {Directive, HostBinding} from '@angular/core';
+
+@Directive({
+    selector:'[mwFavourite]', //This means that the directive's restrict type is attribute
+
+})
+export class FavouriteDirective {
+    //Host binding will look for any change to 
+    //It takes in a string
+    //class refers to the native DOM property
+    @HostBinding('class.is-favourite') isFavourite = true; // This means that attribute directive gets a class property set as `is-favourite`
+}//end:class-Favourite
+```
+
+## Communication between Custom Directives and their Parent Components
+
+```js
+
+```
