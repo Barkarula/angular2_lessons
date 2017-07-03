@@ -16,6 +16,13 @@
 - [NgIf directive in Angular2](#ngif-directive-in-angular2)
 - [NgFor is NgRepeat in Angular2](#ngfor-is-ngrepeat-in-angular2)
 - [Custom Attribute Directive](#custom-attribute-directive)
+- [Angular2 Pipes](#angular2-pipes)
+- [Angular2 Forms](#angular2-forms)
+- [Custom Validations](#custom-validations)
+- [Angular2 Safe Property Operator](#angular2-safe-property-operator)
+- [Services in Angular](#services-in-angular)
+- [Enum Declaration in Angular2](#enum-declaration-in-angular2)
+- [HTTP Service Module in Angular2](#http-service-module-in-angular2)
 
 # Introduction
 
@@ -382,8 +389,537 @@ export class FavouriteDirective {
 }//end:class-Favourite
 ```
 
-## Communication between Custom Directives and their Parent Components
+## Hostbinding and HostListeners
+
+## 1. Hostbinding
+Even `custom directives` can listen to their Host elements using the `Host Binding` and `Host Listeners`
+
+>Host binding: favourite.directive.js
 
 ```js
+import {Directive, HostBinding, Input} from '@angular/core';
+
+@Directive({
+    selector:'[mwFavourite]', //This means that the directive's restrict type is attribute
+
+})
+export class FavouriteDirective {
+    //Host binding will look for any change to 
+    //It takes in a string
+    //class refers to the native DOM property
+    @HostBinding('class.is-favourite') isFavourite = true;
+
+    //set is a keyword in Typescript for a getter method. It is ES6/ES2015, when a property is set
+    //NOTE: the setter method property name should match the selector value
+    @Input() set mwFavourite(value){
+        this.isFavourite = value;
+    }//end:setter
+}//end:class-Favourite
+```
+
+## 2. Hostlistener
+
+The HostListener takes 2 parameters
+- The name of the event handler in String format
+- `[optional]` An array of arguments that the targetting event will emit
+
+```js
+import {Directive, HostBinding, HostListener, Input} from '@angular/core';
+
+@Directive({
+    selector:'[mwFavourite]', //This means that the directive's restrict type is attribute
+
+})
+export class FavouriteDirective {
+    //Host binding will look for any change to 
+    //It takes in a string
+    //class refers to the native DOM property
+    @HostBinding('class.is-favourite') isFavourite = true;
+    @HostBinding('class.is-favourite-hovering') isHovering = false;
+    
+    //REMEMBER - Angular2 works with Native DOM events without the `on` syntax
+    @HostListener('mouseenter') onMouseEnter(){
+        this.isHovering = true;
+    }//end:onMouseEnter
+
+    //Hostlistener for on-mouse-enter and on-mouse-leave events
+    @HostListener('mouseleave') onMouseLeave(){
+        this.isHovering = false;
+    }//end:onMouseLeave
+
+    //set is a keyword in Typescript for a getter method. It is ES6/ES2015, when a property is set
+    //NOTE: the setter method property name should match the selector value
+    @Input() set mwFavourite(value){
+        this.isFavourite = value;
+    }//end:setter
+}//end:class-Favourite
+```
+
+---
+
+# Angular2 Pipes
+
+Angular2 Pipe - A template expression operator that takes in a value and returns a new value representation.
+
+```html
+<!--The followoing pipe uses inbuilt date format to change string to date-->
+<div>Watched on {{mediaItem.isWatchOn | date: 'shortDate'}}</div>
+```
+
+> NOTE: You can also chain multiple pipes. For example
+
+```html
+<!--The following pipe uses inbuilt string splicing and then converts the string to UPPERCASE-->
+<h2>{{mediaItem.name | slice:0:10 | uppercase}}</h2>
+```
+
+# Angular2 Forms
+
+Angular2 Forms are driven by two types:
+
+- Angular2 `FormsModule` Module
+- Angular2 `ReactFormsModule` Module
+- Constructor Injection type using `FormBuilder` Module
+
+## Forms Module
+
+This type of creating Forms is also called - **Template Driven Forms**
+
+>1. Import the Forms in the app.module.ts
+```js
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HttpModule } from '@angular/http';
+
+//Custom Components and Directives
+import { AppComponent } from './app.component';
+import {MediaComponent} from './components/media.component';
+import {MediaFormComponent} from './components/media.form.component';
+import {FavouriteDirective} from './directives/favourite.directive';
+import {CategoryListPipe} from './pipes/category-list.pipe';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    MediaComponent,
+    MediaFormComponent,
+    FavouriteDirective,
+    CategoryListPipe
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule, //This is the standard FormsModule
+    HttpModule    
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+
+export class AppModule { }//NOTE: this is an empty class
+```
+
+>2. Include the Create a FormComponent - `MediaFormComponent`
+
+```js
+import {Component} from '@angular/core';
+
+@Component({
+    selector:'mw-media-form',
+    templateUrl:'./media.form.component.html',
+    styleUrls:['./../bootstrap.min.css','./media.component.css']
+})
+export class MediaFormComponent{
+    // medium:String = '';
+    onSubmit = (formValue) =>{
+        console.log('Submitted ',formValue);
+    }//end:onSubmit
+}//end:class-MediaFormComponent
+```
+
+>3. Include the New Forms Component in the Media - `media.component.html`
+
+```html
+<div class="media-view">
+    <h2 [textContent]="title"></h2>
+    <p *ngIf="isWatchedOn">This all is comming from the Media Component</p>
+    <a (click)="onDelete()" class="btn btn-success">Delete</a>
+    <br/>
+    <!--We want to set the directive to a statement that would be evaluated. We want Angular to know we want to do a binding here-->
+    <ul [mwFavourite]="mediaItem.isFavourite">
+        <li [textContent]="mediaItem.name"></li>
+        <li [textContent]="mediaItem.title"></li>
+        <li [textContent]="mediaItem.expertise"></li>
+    </ul>
+</div>
+```
+
+>4. Just style the Media Form component - `media.form.component.html`
+
+```html
+<header>
+    <h2>Add Media to Watch</h2>
+</header>
+<!--#mediaItemForm is a variable name-->
+<form
+    #mediaItemForm="ngForm"
+    (ngSubmit)="onSubmit(mediaItemForm.value)">
+    <ul>
+        <li>
+            <label for="medium">Medium</label>
+            <!--This is equivalent to ng-model="mediaItemForm.medium" -->
+            <select name="medium" id="medium" ngModel>
+                <option value="Movies">Movies</option>
+                <option value="Series">Series</option>
+            </select>
+        </li>
+        <li>
+            <label for="name">Name</label>
+            <input type="text" name="name" id="name" ngModel>
+        </li>
+        <li>
+            <label for="category">Category</label>
+            <select name="category" id="category" ngModel>
+                <option value="Action">Action</option>
+                <option value="Science Fiction">Science Fiction</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Drama">Drama</option>
+                <option value="Horror">Horror</option>
+                <option value="Romance">Romance</option>
+            </select>
+        </li>
+        <li>
+            <label for="year">Year</label>
+            <input type="text" name="year" id="year" maxlength="4" ngModel>
+        </li>
+    </ul>
+    <!--This will trigger the ngSubmit event-->
+    <button type="submit">Save</button>
+</form>
+```
+
+## Model-Driven Forms
+
+This type of Forms creations is also called - **Model Driven Forms**
+For `Model Driven Forms` You need to use instead the `ReactiveFormsModule` from the `@angular/forms` module:
+```js
+import { ReactiveFormsModule } from '@angular/forms';
+```
+
+>NOTE: You can use both the `ReactiveFormsModule` and the `FormsModule` side-by-side.
+
+Advantages of using the ReactiveFormsModule
+
+- `ReactiveFormsModule` doesnt rely on the `form` tag.
+- You can define your on `model`
+
+> app.module.ts
+
+```js
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HttpModule } from '@angular/http';
+
+//Custom Components and Directives
+import { AppComponent } from './app.component';
+import {MediaComponent} from './components/media.component';
+import {MediaFormComponent} from './components/media.form.component';
+import {FavouriteDirective} from './directives/favourite.directive';
+import {CategoryListPipe} from './pipes/category-list.pipe';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    MediaComponent,
+    MediaFormComponent,
+    FavouriteDirective,
+    CategoryListPipe
+  ],
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    HttpModule    
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+
+export class AppModule { }//NOTE: this is an empty class
+```
+
+>media.form.component.ts
+
+```js
+import {Component} from '@angular/core';
+import {FormGroup, FormControl} from '@angular/forms';
+
+@Component({
+    selector:'mw-media-form',
+    templateUrl:'./media.form.component.html',
+    styleUrls:['./../bootstrap.min.css','./media.component.css']
+})
+export class MediaFormComponent{
+    form:Object; //form ppty
+
+    //This is one of the component's lifecycle method. Similar to angular1.6 .$onInit () method    
+    ngOnInit(){
+        this.form = new FormGroup({
+            medium:new FormControl('Movies'),
+            name: new FormControl(),
+            category: new FormControl(),
+            year: new FormControl()
+        });
+    }//end:ngOnInit
+    
+    onSubmit = (formValue) =>{
+        console.log('Submitted ',formValue);
+    }//end:onSubmit
+}//end:class-MediaFormComponent
+```
+
+```html
+<header>
+    <h2>Add Media to Watch</h2>
+</header>
+<form
+    [formGroup]="form"
+    (ngSubmit)="onSubmit(form.value)">
+    <ul>
+        <li>
+            <label for="medium">Medium</label>
+            <select name="medium" id="medium" formControlName="medium">
+                <option value="Movies">Movies</option>
+                <option value="Series">Series</option>
+            </select>
+        </li>
+        <li>
+            <label for="name">Name</label>
+            <input type="text" name="name" id="name" formControlName="name">
+        </li>
+        <li>
+            <label for="category">Category</label>
+            <select name="category" id="category" formControlName="category">
+                <option value="Action">Action</option>
+                <option value="Science Fiction">Science Fiction</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Drama">Drama</option>
+                <option value="Horror">Horror</option>
+                <option value="Romance">Romance</option>
+            </select>
+        </li>
+        <li>
+            <label for="year">Year</label>
+            <input type="text" name="year" id="year" maxlength="4" formControlName="year">
+        </li>
+    </ul>
+    <button type="submit">Save</button>
+</form>
+```
+
+---
+
+### Custom Validations
+
+Custom Regex Expressions: `[\\w\\-\\s\\/]+`
+
+```js
+import {Component} from '@angular/core';
+import {FormGroup, FormControl, Validators} from '@angular/forms';
+
+@Component({
+    selector:'mw-media-form',
+    templateUrl:'./media.form.component.html',
+    styleUrls:['./../bootstrap.min.css','./media.component.css']
+})
+export class MediaFormComponent{
+    form:Object; //form ppty
+
+    //This is one of the component's lifecycle method. Similar to angular1.6 .$onInit () method    
+    ngOnInit(){
+        this.form = new FormGroup({
+            medium:new FormControl('Movies'),
+            name: new FormControl('',Validators.compose([
+                Validators.required,
+                Validators.pattern('[\\w\\-\\s\\/]+')
+            ])),
+            category: new FormControl(),
+            year: new FormControl('',this.yearValidator)
+        });
+    }//end:ngOnInit
+
+    yearValidator(control){
+        if(control.value.trim().length === 0){
+            return null
+        }
+        let year = parseInt(control.value);
+        let minYear = 1990;
+        let maxYear = 2120;
+        if(year>= minYear && year<=maxYear){
+            return null;
+        }else{
+            return {'year':true};
+        }
+    }//end:yearValidation
+    
+    onSubmit = (formValue) =>{
+        console.log('Submitted ',formValue);
+    }//end:onSubmit
+}//end:class-MediaFormComponent
+```
+---
+
+## Constructor Injection using the `FormBuilder` Module
+
+We can use the `{FormBuilder}` compoent from `@angular/forms` module, and use it as a service and again achieve the same result as above
+
+```js
+import {Component} from '@angular/core';
+import {FormBuilder, Validators} from '@angular/forms';
+
+@Component({
+    selector:'mw-media-form',
+    templateUrl:'./media.form.component.html',
+    styleUrls:['./../bootstrap.min.css','./media.component.css']
+})
+export class MediaFormComponent{
+    form:Object; //form ppty
+
+    //Using a constructor for Class instantiation
+    constructor(private formBuilder:FormBuilder){        
+    }//end:constructor
+
+    //This is one of the component's lifecycle method. Similar to angular1.6 .$onInit () method    
+    ngOnInit(){
+        this.form = this.formBuilder.group({
+            medium:this.formBuilder.control('Movies'),
+            name: this.formBuilder.control('',Validators.compose([
+                Validators.required,
+                Validators.pattern('[\\w\\-\\s\\/]+')
+            ])),
+            category: this.formBuilder.control(''),
+            year: this.formBuilder.control('',this.yearValidator)
+        });
+    }//end:ngOnInit
+
+    yearValidator(control){
+        if(control.value.trim().length === 0){
+            return null
+        }
+        let year = parseInt(control.value);
+        let minYear = 1990;
+        let maxYear = 2120;
+        if(year>= minYear && year<=maxYear){
+            return null;
+        }else{
+            return {'year':true};
+        }
+    }//end:yearValidation
+    
+    onSubmit = (formValue) =>{
+        console.log('Submitted ',formValue);
+    }//end:onSubmit
+}//end:class-MediaFormComponent
+```
+---
+
+# Angular2 Safe Property Operator
+
+Angular's Safe Property Operator is like a safety check but on the HTML side.
+
+```html
+<div *ngIf="form.controls.name.error?.pattern" class="error">Name has invalid Characters</div>
+```
+
+# Services in Angular2
+
+Built in Services in Angular2. They are
+
+- HTTP Service
+- FormBuilder
+- Router
+
+> NOTE: Services can be injected in Angular in two places
+
+1. In the Root component using the `providers` array configuration
+
+```js
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { HttpModule } from '@angular/http';
+
+//Custom Components and Directives
+import { AppComponent } from './app.component';
+import {MediaComponent} from './components/media.component';
+import {MediaFormComponent} from './components/media.form.component';
+import {FavouriteDirective} from './directives/favourite.directive';
+import {CategoryListPipe} from './pipes/category-list.pipe';
+import {MediaItemService} from './services/media-item.service'; //Importing the MediaItemService module
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    MediaComponent,
+    MediaFormComponent,
+    FavouriteDirective,
+    CategoryListPipe
+  ],
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    HttpModule    
+  ],
+  providers: [
+    MediaItemService //This will make it the SingleTon service available to the entire application
+  ],
+  bootstrap: [AppComponent]
+})
+
+export class AppModule { }//NOTE: this is an empty class
 
 ```
+
+2. As a constructor in Individual Components
+
+```js
+// MediaComponent
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+//Importing the service in the MediaComponent
+import {MediaItemService} from './../services/media-item.service';
+
+@Component({
+    selector:'mw-media',
+    templateUrl:'./media.component.html',
+    styleUrls:['../bootstrap.min.css','./media.component.css']
+})
+export class MediaComponent{
+    mediaItems = [];
+    constructor(private mediaItemService:MediaItemService){
+    }//end:constructor
+
+    ngOnInit(){
+        this.mediaItems = this.mediaItemService.get();
+    }
+   
+   @Input() mediaItem;
+   @Output() delete = new EventEmitter();
+   isWatchedOn:boolean = false;
+
+   title:String = `Welcome to the Custom Media Component`;
+
+   onDelete = ():void=>{
+    this.isWatchedOn = true;
+    this.delete.emit(this.mediaItem);
+    console.log('The onDelete Button was clicked');
+   }//end:onDelete
+}//end:class-MediaComponent
+```
+
+# Enum Declaration in Angular2
+
+The following code is a way to introduce Enumerations, ENUMs or in AngularJS like `angular.module().constants()`
+
+
+# HTTP Service Module in Angular2
+
